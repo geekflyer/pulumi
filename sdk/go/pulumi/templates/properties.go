@@ -273,8 +273,8 @@ func checkApplier(fn interface{}, elementType reflect.Type) reflect.Value {
 // property, and accumulates all implicated dependencies, so that resources can be properly tracked using a DAG.
 // This function does not block awaiting the value; instead, it spawns a Goroutine that will await its availability.
 // nolint: interfacer
-func (out *OutputState) Apply(applier interface{}) Output {
-	return out.ApplyWithContext(context.Background(), makeContextful(applier, out.elementType()))
+func (o *OutputState) Apply(applier interface{}) Output {
+	return o.ApplyWithContext(context.Background(), makeContextful(applier, o.elementType()))
 }
 
 var anyOutputType = reflect.TypeOf((*AnyOutput)(nil)).Elem()
@@ -284,17 +284,17 @@ var anyOutputType = reflect.TypeOf((*AnyOutput)(nil)).Elem()
 // This function does not block awaiting the value; instead, it spawns a Goroutine that will await its availability.
 // The provided context can be used to reject the output as canceled.
 // nolint: interfacer
-func (out *OutputState) ApplyWithContext(ctx context.Context, applier interface{}) Output {
-	fn := checkApplier(applier, out.elementType())
+func (o *OutputState) ApplyWithContext(ctx context.Context, applier interface{}) Output {
+	fn := checkApplier(applier, o.elementType())
 
 	resultType := anyOutputType
 	if ot, ok := concreteTypeToOutputType.Load(fn.Type().Out(0)); ok {
 		resultType = ot.(reflect.Type)
 	}
 
-	result := newOutput(resultType, out.dependencies()...)
+	result := newOutput(resultType, o.dependencies()...)
 	go func() {
-		v, known, err := out.await(ctx)
+		v, known, err := o.await(ctx)
 		if err != nil || !known {
 			result.fulfill(nil, known, err)
 			return
@@ -315,13 +315,13 @@ func (out *OutputState) ApplyWithContext(ctx context.Context, applier interface{
 
 {{range .Builtins}}
 // Apply{{.Name}} is like Apply, but returns a {{.Name}}Output.
-func (out *OutputState) Apply{{.Name}}(applier interface{}) {{.Name}}Output {
-	return out.Apply(applier).({{.Name}}Output)
+func (o *OutputState) Apply{{.Name}}(applier interface{}) {{.Name}}Output {
+	return o.Apply(applier).({{.Name}}Output)
 }
 
 // Apply{{.Name}}WithContext is like ApplyWithContext, but returns a {{.Name}}Output.
-func (out *OutputState) Apply{{.Name}}WithContext(ctx context.Context, applier interface{}) {{.Name}}Output {
-	return out.ApplyWithContext(ctx, applier).({{.Name}}Output)
+func (o *OutputState) Apply{{.Name}}WithContext(ctx context.Context, applier interface{}) {{.Name}}Output {
+	return o.ApplyWithContext(ctx, applier).({{.Name}}Output)
 }
 {{end}}
 
