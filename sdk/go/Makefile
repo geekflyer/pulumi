@@ -7,8 +7,10 @@ TESTPARALLELISM := 10
 
 include ../../build/common.mk
 
-build::
+gen::
 	go generate ./pulumi/...
+
+build:: gen
 	go install -ldflags "-X github.com/pulumi/pulumi/pkg/version.Version=${VERSION}" ${LANGHOST_PKG}
 
 install_plugin::

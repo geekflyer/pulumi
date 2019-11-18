@@ -24,6 +24,10 @@ import (
 	"github.com/pulumi/pulumi/pkg/util/contract"
 )
 
+// Output helps encode the relationship between resources in a Pulumi application. Specifically an output property
+// holds onto a value and the resource it came from. An output value can then be provided when constructing new
+// resources, allowing that new resource to know both the value as well as the resource the value came from.  This
+// allows for a precise "dependency graph" to be created, which properly tracks the relationship between resources.
 type Output interface {
 	ElementType() reflect.Type
 
@@ -58,10 +62,7 @@ const (
 	outputRejected
 )
 
-// Output helps encode the relationship between resources in a Pulumi application. Specifically an output property
-// holds onto a value and the resource it came from. An output value can then be provided when constructing new
-// resources, allowing that new resource to know both the value as well as the resource the value came from.  This
-// allows for a precise "dependency graph" to be created, which properly tracks the relationship between resources.
+// OutputState holds the internal details of an Output and implements the Apply and ApplyWithContext methods.
 type OutputState struct {
 	mutex sync.Mutex
 	cond  *sync.Cond
@@ -325,10 +326,16 @@ func (o *OutputState) Apply{{.Name}}WithContext(ctx context.Context, applier int
 }
 {{end}}
 
+// All returns an AnyArrayOutput that will resolve when all of the provided outputs will resolve. Each element of the
+// array will contain the resolved value of the corresponding output. The output will be rejected if any of the inputs
+// is rejected.
 func All(outputs ...Output) AnyArrayOutput {
 	return AllWithContext(context.Background(), outputs...)
 }
 
+// AllWithContext returns an AnyArrayOutput that will resolve when all of the provided outputs will resolve. Each
+// element of the array will contain the resolved value of the corresponding output. The output will be rejected if any
+// of the inputs is rejected.
 func AllWithContext(ctx context.Context, outputs ...Output) AnyArrayOutput {
 	var deps []Resource
 	for _, o := range outputs {
@@ -425,6 +432,7 @@ type anyInput struct {
 	v interface{}
 }
 
+// Any creates a new AnyInput value.
 func Any(v interface{}) AnyInput {
 	return anyInput{v: v}
 }
