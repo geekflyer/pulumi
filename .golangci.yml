@@ -1,3 +1,7 @@
+run:
+  skip-files:
+    - sdk/go/pulumi/templates/.*
+
 linters:
   enable-all: false
   enable:
